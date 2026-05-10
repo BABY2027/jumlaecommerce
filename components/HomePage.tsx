@@ -23,6 +23,7 @@ export default function HomePage() {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("");
   const [isPremium, setIsPremium] = useState(false);
+  const [searchFocus, setSearchFocus] = useState(false);
 
   useEffect(() => {
     setIsPremium(localStorage.getItem("premium") === "true");
@@ -46,7 +47,7 @@ export default function HomePage() {
       return matchSearch && matchCat;
     });
 
-  const categoryChips = ["All", ...CATEGORIES.slice(0, 7)];
+  const categoryChips = [\"All\", ...CATEGORIES.slice(0, 7)];\n  const [searchFocus, setSearchFocus] = useState(false);
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100">
@@ -108,7 +109,9 @@ export default function HomePage() {
 
         <section className="grid gap-4 md:grid-cols-[1.8fr_1fr]">
           <div className="card-glass border border-slate-800/70 p-6">
-            <div className="relative">
+            <div className={`relative transition-all duration-300 ${
+              searchFocus ? "ring-2 ring-cyan-500/50 rounded-2xl" : ""
+            }`}>
               <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-slate-500 text-lg">
                 🔍
               </div>
@@ -117,7 +120,9 @@ export default function HomePage() {
                 placeholder="Search products, categories or sellers"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="input-styled pl-14"
+                onFocus={() => setSearchFocus(true)}
+                onBlur={() => setSearchFocus(false)}
+                className="input-styled pl-14 focus:ring-0 focus:border-cyan-400"
               />
             </div>
 
@@ -218,8 +223,10 @@ export default function HomePage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-              {filteredProducts.map((product) => (
-                <ProductCard key={product.id} product={product} isPremium={isPremium} />
+              {filteredProducts.map((product, idx) => (
+                <div key={product.id} style={{ animationDelay: `${idx * 50}ms` }} className="animate-scale-in">
+                  <ProductCard product={product} isPremium={isPremium} />
+                </div>
               ))}
             </div>
           )}

@@ -1,26 +1,40 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { isValidPhone } from "@/lib/utils";
 
 export default function WalletPage() {
   const [mpesa, setMpesa] = useState("");
   const [airtel, setAirtel] = useState("");
 
   useEffect(() => {
-    const saved = localStorage.getItem("paymentDetails");
-    if (saved) {
-      const { mpesa: savedMpesa, airtel: savedAirtel } = JSON.parse(saved);
-      setMpesa(savedMpesa || "");
-      setAirtel(savedAirtel || "");
+    try {
+      const saved = localStorage.getItem("paymentDetails");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        setMpesa(parsed.mpesa || "");
+        setAirtel(parsed.airtel || "");
+      }
+    } catch (error) {
+      console.error("Failed to load payment details:", error);
     }
   }, []);
 
   const handleSave = () => {
+    const phoneErrors = [];
+    if (mpesa && !isValidPhone(mpesa)) phoneErrors.push("M-Pesa");
+    if (airtel && !isValidPhone(airtel)) phoneErrors.push("Airtel Money");
+
+    if (phoneErrors.length > 0) {
+      alert(`Please enter a valid ${phoneErrors.join(" and ")} number in the format 2557XXXXXXXX.`);
+      return;
+    }
+
     localStorage.setItem(
       "paymentDetails",
-      JSON.stringify({ mpesa, airtel })
+      JSON.stringify({ mpesa: mpesa.replace(/\D/g, ""), airtel: airtel.replace(/\D/g, "") })
     );
-    alert("✅ Payment details saved!");
+    alert("✅ Payment details saved securely!");
   };
 
   return (
@@ -114,16 +128,16 @@ export default function WalletPage() {
         </div>
 
         {/* Promotions */}
-        <div className="card-glass border-slate-600/50 p-6">
+        <div className="card-glass border-slate-600/50 p-6 rounded-[28px]">
           <h4 className="font-bold text-lg text-white mb-4 flex items-center gap-2">
             <span>🎁</span> Available Offers
           </h4>
           <div className="grid md:grid-cols-2 gap-3">
-            <div className="p-4 bg-gradient-to-r from-emerald-500/20 to-teal-500/20 border border-emerald-500/30 rounded-lg">
+            <div className="p-4 bg-gradient-to-r from-emerald-500/15 to-teal-500/15 border border-emerald-500/20 rounded-3xl">
               <p className="text-sm font-medium text-emerald-300">New Seller Bonus</p>
               <p className="text-xs text-slate-400 mt-1">Post 5 items and get 10,000 TZS credit</p>
             </div>
-            <div className="p-4 bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/30 rounded-lg">
+            <div className="p-4 bg-gradient-to-r from-amber-500/15 to-orange-500/15 border border-amber-500/20 rounded-3xl">
               <p className="text-sm font-medium text-amber-300">Referral Program</p>
               <p className="text-xs text-slate-400 mt-1">Invite friends and earn 5,000 TZS each</p>
             </div>

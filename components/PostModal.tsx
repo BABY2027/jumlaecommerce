@@ -4,6 +4,7 @@ import { useState, useRef } from "react";
 import { collection, addDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { CATEGORIES } from "@/lib/constants";
+import { isValidPhone, isValidPrice, sanitizeText } from "@/lib/utils";
 
 interface PostModalProps {
   isOpen: boolean;
@@ -42,19 +43,37 @@ export default function PostModal({
           body: form,
         }
       );
+
+      if (!res.ok) {
+        throw new Error("Upload failed");
+      }
+
       const data = await res.json();
+      if (!data.secure_url) {
+        throw new Error("Invalid upload response");
+      }
+
       setImageURL(data.secure_url);
     } catch (error) {
       console.error("Upload error:", error);
-      alert("Image upload failed");
+      alert("Image upload failed. Please try again.");
     } finally {
       setIsLoading(false);
     }
   };
 
   const handlePost = async () => {
-    if (!name.trim() || !price.trim()) {
-      alert("Jaza name & price");
+    const cleanName = sanitizeText(name);
+    const cleanLocation = sanitizeText(location);
+    const cleanPhone = phone.replace(/\D/g, "");
+
+    if (!cleanName || !isValidPrice(price) || !cleanLocation) {
+      alert("Please enter a valid product name, price, and location.");
+      return;
+    }
+
+    if (!isValidPhone(cleanPhone)) {
+      alert("Please enter a valid phone number in the format 2557XXXXXXXX.");
       return;
     }
 
@@ -67,17 +86,16 @@ export default function PostModal({
 
     try {
       await addDoc(collection(db, "products"), {
-        name,
+        name: cleanName,
         price: parseFloat(price),
-        phone,
-        location,
+        phone: cleanPhone,
+        location: cleanLocation,
         category,
         image: imageURL,
         likes: 0,
         time: Date.now(),
       });
 
-      // Reset form
       setName("");
       setPrice("");
       setPhone("");
@@ -89,12 +107,12 @@ export default function PostModal({
         fileInputRef.current.value = "";
       }
 
-      alert("✅ Ime-post successfully");
+      alert("✅ Product posted successfully");
       onClose();
       onPostSuccess();
     } catch (error) {
       console.error("Post error:", error);
-      alert("❌ Error posting");
+      alert("❌ Error posting. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -218,11 +236,11 @@ export default function PostModal({
         </div>
 
         {/* Action Buttons */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid gap-3 sm:grid-cols-[1.4fr_0.8fr]">
           <button
             onClick={handlePost}
             disabled={isLoading}
-            className="btn-primary col-span-2 group"
+            className="btn-primary group"
           >
             {isLoading ? (
               <span className="inline-block animate-spin">⏳</span>
@@ -236,13 +254,6 @@ export default function PostModal({
             className="btn-secondary"
           >
             Cancel
-          </button>
-          <button
-            onClick={onClose}
-            disabled={isLoading}
-            className="btn-secondary"
-          >
-            Close
           </button>
         </div>
       </div>

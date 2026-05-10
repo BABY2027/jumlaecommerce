@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { collection, query, where, getDocs, setDoc, doc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { isValidPhone, sanitizeText } from "@/lib/utils";
 
 export default function NufaikaPage() {
   const [name, setName] = useState("");
@@ -37,25 +38,28 @@ export default function NufaikaPage() {
   };
 
   const handleRegister = async () => {
-    if (!name.trim() || !phone.trim()) {
-      alert("Jaza taarifa zote");
+    const cleanName = sanitizeText(name);
+    const cleanPhone = phone.replace(/\D/g, "");
+
+    if (!cleanName || !isValidPhone(cleanPhone)) {
+      alert("Please enter a valid name and phone number in the format 2557XXXXXXXX.");
       return;
     }
 
     try {
-      await setDoc(doc(db, "users", phone), {
-        name,
-        phone,
+      await setDoc(doc(db, "users", cleanPhone), {
+        name: cleanName,
+        phone: cleanPhone,
         time: Date.now(),
       });
 
-      localStorage.setItem("nufaika", phone);
+      localStorage.setItem("nufaika", cleanPhone);
       setIsLoggedIn(true);
       setShowDashboard(true);
-      loadUserData(phone);
+      loadUserData(cleanPhone);
     } catch (error) {
       console.error("Error registering:", error);
-      alert("Error registering");
+      alert("Error registering. Please try again.");
     }
   };
 
@@ -69,10 +73,9 @@ export default function NufaikaPage() {
 
   if (isLoggedIn && showDashboard && userData) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-transparent via-slate-900/30 to-transparent">
-        <div className="container mx-auto max-w-7xl px-4 py-8">
-          {/* Welcome Header */}
-          <div className="card-solid border-slate-600/50 p-8 mb-8 relative overflow-hidden">
+      <div className="min-h-screen bg-slate-950 text-slate-100">
+        <div className="container mx-auto max-w-7xl px-4 py-8 space-y-8">
+          <div className="card-solid border border-slate-800/70 p-8 overflow-hidden relative">
             <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-transparent to-emerald-500/10"></div>
             <div className="relative">
               <h3 className="text-4xl font-bold text-white mb-2">
@@ -82,9 +85,8 @@ export default function NufaikaPage() {
             </div>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-6 mb-8">
-            {/* Stats */}
-            <div className="card-glass border-slate-600/50 p-6">
+          <div className="grid md:grid-cols-3 gap-6">
+            <div className="card-glass border border-slate-800/70 p-6 rounded-[28px]">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-slate-400 text-sm">Total Posts</p>
@@ -94,44 +96,38 @@ export default function NufaikaPage() {
               </div>
             </div>
 
-            <div className="card-glass border-slate-600/50 p-6">
+            <div className="card-glass border border-slate-800/70 p-6 rounded-[28px]">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-slate-400 text-sm">Total Likes</p>
-                  <h4 className="text-3xl font-bold bg-gradient-to-r from-red-400 to-pink-400 bg-clip-text text-transparent">
-                    0
-                  </h4>
+                  <h4 className="text-3xl font-bold bg-gradient-to-r from-red-400 to-pink-400 bg-clip-text text-transparent">0</h4>
                 </div>
                 <span className="text-4xl">❤️</span>
               </div>
             </div>
 
-            <div className="card-glass border-slate-600/50 p-6">
+            <div className="card-glass border border-slate-800/70 p-6 rounded-[28px]">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-slate-400 text-sm">Member Since</p>
-                  <h4 className="text-sm font-semibold text-slate-200 mt-2">
-                    {new Date(userData.time).toLocaleDateString()}
-                  </h4>
+                  <h4 className="text-sm font-semibold text-slate-200 mt-2">{new Date(userData.time).toLocaleDateString()}</h4>
                 </div>
                 <span className="text-4xl">⭐</span>
               </div>
             </div>
           </div>
 
-          {/* Posts Section */}
-          <div className="card-solid border-slate-600/50 p-6 mb-8">
+          <div className="card-solid border border-slate-800/70 p-6 rounded-[28px]">
             <h4 className="font-bold text-lg text-white mb-4">📦 Your Products</h4>
             <div className="text-center py-12 text-slate-400">
               <p className="text-2xl mb-2">📭</p>
-              <p>No products posted yet. Click the ➕ button to create your first listing!</p>
+              <p>No products posted yet. Use the + button to create your first listing and grow your store.</p>
             </div>
           </div>
 
-          {/* Logout */}
           <button
             onClick={handleLogout}
-            className="w-full py-3 bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-700 hover:to-pink-700 text-white rounded-lg font-bold transition-smooth"
+            className="w-full py-3 bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-700 hover:to-pink-700 text-white rounded-3xl font-bold transition-all duration-200"
           >
             🚪 Logout
           </button>
